@@ -17,7 +17,7 @@ In more details we are going to implement the following algorithms:
 
 - Clustering::
 	K-Means:
-		Purpose:
+		Purpose: Cluster a dataset of multidimentional points
 		Dataset:
 
 - Graph Operations:
