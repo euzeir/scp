@@ -23,7 +23,7 @@ In more details we are going to implement the following algorithms:
 - Graph Operations:
 	Degree of Separation:
 		Purpose: Find the degree of separation between a node and all the others in a social network graph dataset (Facebook network)
-		Dataset: Facebook dataset of connections.
+		Dataset: Facebook dataset of connections and other datasets.
 
 The project should be developed using Scala as programming language and Apache Spark.
 

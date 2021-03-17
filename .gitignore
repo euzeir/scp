@@ -7,3 +7,5 @@
 
 #general
 *.class
+*.cache
+*.bsp
