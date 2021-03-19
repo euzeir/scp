@@ -14,7 +14,7 @@ import scala.collection.mutable.ArrayBuffer
  * From an algorithmic prospective this can be seen also as the BFS (Breadth First Algorithm)
  * https://en.wikipedia.org/wiki/Breadth-first_search
  */
-object DegreesOfSeparation {
+object DegreeOfSeparation {
 
   // The nodes we want to find the separation between.
   val startNodeID = 5988
