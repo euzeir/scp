@@ -28,7 +28,7 @@ object KMeansClusteringCensusData {
     //create the spark session object
     val spark = SparkSession
       .builder()
-      .appName("CensusClustering")
+      .appName("KMeansClusteringCensusData")
       .master("local[*]")
       .getOrCreate()
 

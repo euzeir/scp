@@ -1,80 +1,119 @@
-import scala.math.pow
+import scala.math._
 import org.apache.spark.SparkContext
 import org.apache.log4j._
 
+/**
+ *
+ * Scalable and Cloud Programming - e.uzeir & d.coriale
+ *
+ * This is an implementation of the KMeans clustering algorithm using old Spark APIs
+ * based on RDDs.
+ * The purpose here is to cluster a set of data points taken from a dataset of Earthquakes
+ * happened between 1970 to 2014. The dataset can be found in the following link:
+ * https://data.humdata.org/dataset/catalog-of-earthquakes1970-2014
+ * The dataset contains the following fields 12 fields consisting of numeric and non numeric values
+ * (DateTime,Latitude,Longitude,Depth,Magnitude,MagType,NbStations,Gap,Distance,RMS,Source,EventID)
+ * Here we are going to consider only for numeric (Double) fields to create 4 dimensional points.
+ * Each point is 4 coordinates P(Latitude, Longitude, Depth, Magnitude)
+ * We have used a number of clusters K = 51 based on this document:
+ * https://www.sciencedirect.com/science/article/pii/B9780444410764500213
+ * that states that in the planet are present 51 seismic regions.
+ * Algorithm implementation based on theory book: ISLR - free edition (chapter 10.3.1)
+ * https://www.statlearning.com/
+ */
+
 object KMeansClusteringEarthquakeData {
 
+  // Define the Point custom data type as a list of Doubles : P(x, y, z, w)
+  type Point = (Double, Double, Double, Double)
 
-  // The squared distances between two points
-  def distanceSquared(pointA: (Double, Double, Double, Double), pointB: (Double, Double, Double, Double)): Double = {
-    pow(pointB._1 - pointA._1, 2) + pow(pointB._2 - pointA._2, 2) + pow(pointB._3 - pointB._3, 2) + pow(pointB._4 - pointB._4, 2)
+  // The distances between two points (Euclidean distance)
+  // https://en.wikipedia.org/wiki/Euclidean_distance
+  def distanceBetweenTwoPoints(pointA: Point, pointB: Point): Double = {
+    sqrt(pow(pointB._1 - pointA._1, 2) + pow(pointB._2 - pointA._2, 2) + pow(pointB._3 - pointB._3, 2) + pow(pointB._4 - pointB._4, 2))
   }
 
-  // The sum of two points
-  def addPoints(pointA: (Double, Double, Double, Double), pointB: (Double, Double, Double, Double)): (Double, Double, Double, Double) = {
+  // The sum of the coordinates of two points
+  // http://mathandmultimedia.com/2011/06/29/addition-of-coordinates/
+  def coordinateAddition(pointA: Point, pointB: Point): Point = {
     (pointA._1 + pointB._1, pointA._2 + pointB._2, pointA._3 + pointB._3, pointA._4 + pointB._4)
   }
 
-  // for a point p and an array of points, return the index in the array of the point closest to p
-  def closestPoint(singlePoint: (Double, Double, Double, Double), arrayOfPoints: Array[(Double, Double, Double, Double)]): Int = {
-    var bestIndex = 0
-    var closest = Double.PositiveInfinity
+  //given a single point Pi(x, y, z, w) and an array of points A = [P1, P2, .... Pn] the function returns the
+  //index of the point in the array that has the shortest distance to the original point Pi.
+  def closestPoint(singlePoint: Point, arrayOfPoints: Array[Point]): Int = {
+    var pointIndex = 0
+    var isTheClosestPoint = Double.PositiveInfinity
 
     for (i <- 0 until arrayOfPoints.length) {
-      val dist = distanceSquared(singlePoint, arrayOfPoints(i))
-      if (dist < closest) {
-        closest = dist
-        bestIndex = i
+      val distance = distanceBetweenTwoPoints(singlePoint, arrayOfPoints(i))
+      if (distance < isTheClosestPoint) {
+        isTheClosestPoint = distance
+        pointIndex = i
       }
     }
-    bestIndex
+    pointIndex
   }
 
   def main(args: Array[String]) {
 
+    //setting up the logger to avoid warning logs
     Logger.getLogger("org").setLevel(Level.ERROR)
 
+    //creating the spark context in the old fashion (Spark 1)
     val sparkContext = new SparkContext("local[*]", "KMeansClusteringEarthquakeData")
 
-    // K is the number of means (center points of clusters) to find - 20 Major Earthquake Zones in the Planet
-    val K = 20
+    // K is the number of means (center points of clusters) to find - 51 Major Earthquake Zones in the Planet
+    val K = 51
 
-    // ConvergeDist -- the threshold "distance" between iterations at which we decide we are done
-    val convergeDist = .1
+    // stoppingCondition : this value is used as stopping condition for the KMeans
+    val stoppingCondition = .1
 
-    // Parse the device status data file into pairs
-
+    // Load the data file and remove the Header of the 'csv'.
     val data = sparkContext.textFile("data/earthquakes.csv")
+      .mapPartitionsWithIndex { (idx, iter) => if (idx == 0) iter.drop(1) else iter }
 
-    //create the feature list
+    // Create the feature list with the columns that we are interested for:
+    // Latitude, Longitude, Depth, Magnitude, that represent the coordinates of the points
+    // Note: we use the persist() methode to keep in cache the data, in order to reduce
+    // the processing time
     val features = data.map(line => line.split(','))
       .map(feature => (feature(1).toDouble, feature(2).toDouble, feature(3).toDouble, feature(4).toDouble))
       .filter(point => !((point._1 == 0) && (point._2 == 0) && (point._3 == 0) && (point._4 == 0)))
       .persist()
 
     println("Starting the computation...")
-    println(s"Number of features to process: ${features.count()}")
+    println(s"Number of data points to process: ${features.count()}")
     println("Printing out the shape of a single feature: ")
     for ((a, b, c, d) <- features.take(1)) {
       println("Latitude: " + a + " Longitude : " + b + " Depth: " + c + " Magnitude: " + d)
     }
 
-    //start with K randomly selected points from the dataset as center points
-
-    var kPoints = features.takeSample(withReplacement = false, K)
+    // First Step of the Algorithm:
+    // Select randomly K = 51 points on the set of all points as temporary centroids
+    // The coordinates of the points will change as the iterations goes on
+    println(s"Initializing the $K random Centroids")
+    val kPoints: Array[Point] = features.takeSample(withReplacement = false, K)
 
     println("**************************************************")
-    println(s"Initialize $K random Centroids: ")
+    println(s"Following $K random Centroids have been initialized : ")
     for ((a, b, c, d) <- kPoints) {
       println("Latitude: " + a + " Longitude : " + b + " Depth: " + c + " Magnitude: " + d)
     }
 
     // loop until the total distance between one iteration's points and the next is less than the convergence distance specified
+
+    // tempDistance: Double is the variable that control the iterations of KMeans
+    // when this variable reach a value less than the stoppingCondition then the KMeans stops
+    // and returns the computed centroids
     var tempDistance = Double.PositiveInfinity
 
-    println("**************************************************")
-    while (tempDistance > convergeDist) {
+    var numIterations: Int = 0
 
+    println("**************************************************")
+    while (tempDistance > stoppingCondition) {
+
+      numIterations += 1
       // For each key (k-point index), find a new point by calculating the average of each closest point
 
       // for each point, find the index of the closest kpoint.
@@ -89,29 +128,23 @@ object KMeansClusteringEarthquakeData {
       // (1, ((4.325,-5.444),2314))
       // (0, ((6.342,-7.532),4323))
       // The reduced RDD should have at most K members.
-
-      //val pointCalculatedRdd = closestToKpointRdd.reduceByKey((v1, v2) => ((addPoints(v1._1, v2._1), v1._2 + v2._2)))
-      val pointCalculatedRdd = closestToKpointRdd.reduceByKey { case ((point1, n1), (point2, n2)) => (addPoints(point1, point2), n1 + n2) }
+      val pointCalculatedRdd = closestToKpointRdd.reduceByKey { case ((point1, n1), (point2, n2)) => (coordinateAddition(point1, point2), n1 + n2) }
 
       // For each key (k-point index), find a new point by calculating the average of each closest point
       // (index, (totalX,totalY),n) to (index, (totalX/n,totalY/n))
-
-      //val newPointRdd = pointCalculatedRdd.map(center => (center._1, (center._2._1._1 / center._2._2, center._2._1._2 / center._2._2))).sortByKey()
       val newPoints = pointCalculatedRdd.map { case (i, (point, n)) => (i, (point._1 / n, point._2 / n, point._3 / n, point._4 / n)) }.collectAsMap()
 
       // calculate the total of the distance between the current points (kPoints) and new points (localAverageClosestPoint)
-
       tempDistance = 0.0
 
       for (i <- 0 until K) {
-        // That distance is the delta between iterations. When delta is less than convergeDist, stop iterating
-        tempDistance += distanceSquared(kPoints(i), newPoints(i))
+        tempDistance += distanceBetweenTwoPoints(kPoints(i), newPoints(i))
       }
 
+      println(s"Iteration number: " + numIterations)
       println("Distance between iterations: " + tempDistance)
 
       // Copy the new points to the kPoints array for the next iteration
-
       for (i <- 0 until K) {
         kPoints(i) = newPoints(i)
       }
@@ -129,7 +162,7 @@ object KMeansClusteringEarthquakeData {
     // take 10 randomly selected device from the dataset and recall the model
     val earthquakeRdd = data.map(line => line.split(','))
       .map(feature => (feature(0), (feature(1).toDouble, feature(2).toDouble, feature(3).toDouble, feature(4).toDouble)))
-      .filter(earthquake => !((earthquake._2._1 == 0) && (earthquake._2._2 == 0)))
+      .filter(earthquake => !((earthquake._2._1 == 0) && (earthquake._2._2 == 0) && (earthquake._2._3 == 0) && (earthquake._2._4 == 0)))
       .persist()
 
     var points = earthquakeRdd.takeSample(withReplacement = false, 10)
@@ -143,6 +176,5 @@ object KMeansClusteringEarthquakeData {
 
     sparkContext.stop()
   }
-
 }
 
