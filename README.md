@@ -18,12 +18,7 @@ In more details we are going to implement the following algorithms:
 - Clustering::
 	K-Means:
 		Purpose: Cluster a dataset of multidimentional points
-		Dataset:
-
-- Graph Operations:
-	Degree of Separation:
-		Purpose: Find the degree of separation between a node and all the others in a social network graph dataset (Facebook network)
-		Dataset: Facebook dataset of connections and other datasets.
+		Dataset: https://data.humdata.org/dataset/catalog-of-earthquakes1970-2014
 
 The project should be developed using Scala as programming language and Apache Spark.
 
