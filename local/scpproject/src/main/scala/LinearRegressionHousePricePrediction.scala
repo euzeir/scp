@@ -13,6 +13,7 @@ import org.apache.log4j._
  * In this implementation we use Spark machine learning libraries ml and mllib
  * to create a machine learning model that uses Linear Regression to predict the price
  * of the houses based on a set of features.
+ * (Avg Area Income,Avg Area House Age,Avg Area Number of Rooms,Avg Area Number of Bedrooms,Area Population,Price)
  * The dataset has 6 columns and 5000 rows of all numeric values.
  * The purpose of the implementation is to predict the price of the house based on the given
  * list of features.
@@ -28,7 +29,7 @@ object LinearRegressionHousePricePrediction {
     //create the spark session object
     val spark = SparkSession
       .builder()
-      .appName("HousePricePrediction")
+      .appName("LinearRegressionHousePricePrediction")
       .master("local[*]")
       .getOrCreate()
 

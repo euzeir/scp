@@ -71,8 +71,8 @@ object KMeansClusteringEarthquakeMLImpl {
     println(s"Silhouette with squared euclidean distance = $silhouette")
 
     //printing out the centroids
-    for(centoid <- model.clusterCenters) {
-      println(s"Centroid : ${centoid}")
+    for(centroid <- model.clusterCenters) {
+      println(s"Centroid : ${centroid}")
     }
 
     println(s"Number of features : ${model.numFeatures}")

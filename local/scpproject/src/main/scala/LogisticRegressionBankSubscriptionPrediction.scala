@@ -29,7 +29,7 @@ object LogisticRegressionBankSubscriptionPrediction {
     //creation of SparkSession (in previous Spark versions was SparkContext)
     val spark = SparkSession
       .builder()
-      .appName("BankSubscription")
+      .appName("LogisticRegressionBankSubscriptionPrediction")
       .master("local[*]")
       .getOrCreate()
 
