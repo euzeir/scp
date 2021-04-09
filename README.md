@@ -20,11 +20,17 @@ In more details we are going to implement the following algorithms:
 		Purpose: Cluster a dataset of multidimentional points
 		Dataset: https://data.humdata.org/dataset/catalog-of-earthquakes1970-2014
 
+- Graphs::
+	BFS:
+		Purpose: BFS algorithm on social networks to find the hops from one starting node to a target node.
+		Datasets: http://networkrepository.com/index.php
+				  https://snap.stanford.edu/data/	
+
 The project should be developed using Scala as programming language and Apache Spark.
 
 
 Required:
 	- Scala version 2.12.12
-	- Spark version 3.0.0
+	- Spark version 3.0.1
 
 Eduart Uzeir && Domenico Coriale
