@@ -1,5 +1,5 @@
 import scala.math._
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.log4j._
 
 /**
@@ -22,7 +22,7 @@ import org.apache.log4j._
  * https://www.statlearning.com/
  */
 
-object KMeansClusteringEarthquakeData {
+object KMeansClusteringEarthquakeDataAWS {
 
   // Define the Point custom data type as a list of Doubles : P(x, y, z, w)
   type Point = (Double, Double, Double, Double)
@@ -61,10 +61,7 @@ object KMeansClusteringEarthquakeData {
     Logger.getLogger("org").setLevel(Level.ERROR)
 
     //creating the spark context in the old fashion (Spark 1)
-    val conf = new SparkConf()
-      .setMaster("local[*]")
-      .setAppName("KMeansClusteringEarthquakeData")
-    val sparkContext = new SparkContext(conf)
+    val sparkContext = new SparkContext()
 
     // K is the number of centroids (center points of clusters) to find - 51 Major Earthquake Zones in the Planet
     val K = 51
@@ -73,8 +70,9 @@ object KMeansClusteringEarthquakeData {
     val stoppingCondition = .1
 
     // Load the data file and remove the Header of the 'csv'.
-    //by calling textFile on SparkContext i have created an RDD
-    val data = sparkContext.textFile("data/earthquakes.csv")
+    // by calling textFile on SparkContext i have created an RDD
+    // we had previously upload the data in a S3 bucket called 'scpUzeirCoridale'
+    val data = sparkContext.textFile("s3n://scp-uzeir-coridale/earthquakes.csv")
       .mapPartitionsWithIndex { (idx, iter) => if (idx == 0) iter.drop(1) else iter }
 
     // Create the feature list with the columns that we are interested for:
@@ -172,4 +170,5 @@ object KMeansClusteringEarthquakeData {
     sparkContext.stop()
   }
 }
+
 
