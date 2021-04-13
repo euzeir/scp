@@ -1,4 +1,4 @@
-name := "KMeansClusteringEarthquakeData"
+name := "GraphBfsAWS"
 
 version := "0.1"
 

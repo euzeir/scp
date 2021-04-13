@@ -186,7 +186,7 @@ object GraphBFS {
       // Apply expandBFSMap
       val mapped = iterationRdd.flatMap(expandBFSMap)
 
-      // Number of node that are beeing processed
+      // Number of node that are being processed
       println("Processing " + mapped.count() + " values.")
 
       if (hitCounter.isDefined) {
