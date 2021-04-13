@@ -13,7 +13,7 @@ import org.apache.log4j._
  * https://data.humdata.org/dataset/catalog-of-earthquakes1970-2014
  * The dataset contains the following fields 12 fields consisting of numeric and non numeric values
  * (DateTime,Latitude,Longitude,Depth,Magnitude,MagType,NbStations,Gap,Distance,RMS,Source,EventID)
- * Here we are going to consider only for numeric (Double) fields to create 4 dimensional points.
+ * Here we are going to consider only four numeric (Double) fields to create 4 dimensional points.
  * Each point is 4 coordinates P(Latitude, Longitude, Depth, Magnitude)
  * We have used a number of clusters K = 51 based on this document:
  * https://www.sciencedirect.com/science/article/pii/B9780444410764500213
@@ -70,10 +70,10 @@ object KMeansClusteringEarthquakeData {
     val K = 51
 
     // stoppingCondition : this value is used as stopping condition for the KMeans
-    val stoppingCondition = .1
+    val stoppingCondition = 1.0
 
     // Load the data file and remove the Header of the 'csv'.
-    //by calling textFile on SparkContext i have created an RDD
+    // by calling textFile on SparkContext i have created an RDD
     val data = sparkContext.textFile("data/earthquakes.csv")
       .mapPartitionsWithIndex { (idx, iter) => if (idx == 0) iter.drop(1) else iter }
 
@@ -106,6 +106,7 @@ object KMeansClusteringEarthquakeData {
       println("Latitude: " + a + " Longitude : " + b + " Depth: " + c + " Magnitude: " + d)
     }
 
+    // Second Step fo the Algorithm:
     // loop until the total distance between one iteration's points and the next is
     // less than the value specified in the 'stoppingCondition'
 
@@ -161,7 +162,7 @@ object KMeansClusteringEarthquakeData {
       .filter(earthquake => !((earthquake._2._1 == 0) && (earthquake._2._2 == 0) && (earthquake._2._3 == 0) && (earthquake._2._4 == 0)))
       .persist()
 
-    var points = earthquakeRdd.takeSample(withReplacement = false, 10)
+    val points = earthquakeRdd.takeSample(withReplacement = false, 10)
 
     for ((earthquakeDate, point) <- points) {
       val EarthquakeZone = closestPoint(point, kPoints)

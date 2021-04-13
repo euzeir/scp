@@ -14,7 +14,7 @@ import scala.collection.mutable.ArrayBuffer
  * From an algorithmic prospective this can be seen also as the BFS (Breadth First Algorithm)
  * https://en.wikipedia.org/wiki/Breadth-first_search
  */
-object GraphBFS {
+object GraphBfsAWS {
 
   // The nodes we want to find the separation between.
   val startNodeID = 5988
@@ -58,7 +58,7 @@ object GraphBFS {
 
   // Load the data file and create first iteration
   def initialRDD(sc:SparkContext): RDD[Node] = {
-    val inputFile = sc.textFile("data/graph.csv")
+    val inputFile = sc.textFile("graph.csv")
     inputFile.map(convertToNode)
   }
 
@@ -171,7 +171,7 @@ object GraphBFS {
     Logger.getLogger("org").setLevel(Level.ERROR)
 
     // Create a SparkContext
-    val sparkContext = new SparkContext("local[*]", "GraphBFS")
+    val sparkContext = new SparkContext("local[*]", "GraphBfsAWS")
 
     // Used to signal when we find the target
     hitCounter = Some(sparkContext.longAccumulator("Hit Accumulator"))
